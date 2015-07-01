@@ -10,6 +10,7 @@ import org.kohsuke.stapler.StaplerResponse;
 
 import hudson.model.AbstractProject;
 
+import hudson.model.Job;
 import hudson.plugins.analysis.Messages;
 import hudson.plugins.analysis.core.BuildHistory;
 
@@ -32,13 +33,52 @@ public class DefaultGraphConfigurationView extends GraphConfigurationView {
      *            the build history for this project
      * @param url
      *            The URL of this view
+     * @deprecated Use @link{DefaultGraphConfigurationView#DefaultGraphConfigurationView(GraphConfiguration, Job, String, BuildHistory, String)}
      */
+    @Deprecated
     public DefaultGraphConfigurationView(final GraphConfiguration configuration, final AbstractProject<?, ?> project,
+            final String pluginName, final BuildHistory buildHistory, final String url) {
+        this(configuration, (Job) project, pluginName, buildHistory, url);
+    }
+
+    /**
+     * Creates a new instance of {@link DefaultGraphConfigurationView}.
+     *
+     * @param configuration
+     *            the graph configuration
+     * @param project
+     *            the owning project to configure the graphs for
+     * @param pluginName
+     *            The URL of the project action (there might be a one to many mapping to this defaults view)
+     * @param buildHistory
+     *            the build history for this project
+     * @param url
+     *            The URL of this view
+     */
+    public DefaultGraphConfigurationView(final GraphConfiguration configuration, final Job<?, ?> project,
             final String pluginName, final BuildHistory buildHistory, final String url) {
         super(configuration, project, pluginName, buildHistory);
         this.url = url;
 
         configuration.initializeFromFile(createDefaultsFile(project, pluginName));
+    }
+    /**
+     * Creates a new instance of {@link DefaultGraphConfigurationView}.
+     *
+     * @param configuration
+     *            the graph configuration
+     * @param project
+     *            the owning project to configure the graphs for
+     * @param pluginName
+     *            The name of the plug-in.
+     * @param buildHistory
+     *            the build history for this project
+     * @deprecated Use @link{DefaultGraphConfigurationView#DefaultConfigurationView(GraphConfiguration, Job, String, BuildHistory)}
+     */
+    @Deprecated
+    public DefaultGraphConfigurationView(final GraphConfiguration configuration, final AbstractProject<?, ?> project,
+            final String pluginName, final BuildHistory buildHistory) {
+        this(configuration, (Job)project, pluginName, buildHistory);
     }
 
     /**
@@ -53,8 +93,7 @@ public class DefaultGraphConfigurationView extends GraphConfigurationView {
      * @param buildHistory
      *            the build history for this project
      */
-    public DefaultGraphConfigurationView(final GraphConfiguration configuration, final AbstractProject<?, ?> project,
-            final String pluginName, final BuildHistory buildHistory) {
+    public DefaultGraphConfigurationView(final GraphConfiguration configuration, final Job<?, ?> project, final String pluginName, final BuildHistory buildHistory) {
         this(configuration, project, pluginName, buildHistory,
                 project.getAbsoluteUrl() + pluginName + "/configureDefaults");
     }

@@ -3,6 +3,8 @@ package hudson.plugins.analysis.core;
 import java.io.File;
 import java.io.IOException;
 
+import org.jenkinsci.remoting.RoleChecker;
+
 import hudson.FilePath.FileCallable;
 
 import hudson.plugins.analysis.util.ContextHashCode;
@@ -50,5 +52,10 @@ public class AnnotationsClassifier implements FileCallable<ParserResult> {
             }
         }
         return result;
+    }
+
+    @Override
+    public void checkRoles(final RoleChecker checker) throws SecurityException {
+        //we have no roles to check here?
     }
 }

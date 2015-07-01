@@ -2,11 +2,13 @@ package hudson.plugins.analysis.core;
 
 import java.io.IOException;
 
+import hudson.FilePath;
 import hudson.Launcher;
 
 import hudson.model.Result;
-import hudson.model.AbstractBuild;
 
+import hudson.model.Run;
+import hudson.model.TaskListener;
 import hudson.plugins.analysis.util.PluginLogger;
 
 import hudson.tasks.BuildStep;
@@ -102,6 +104,7 @@ public abstract class HealthAwarePublisher extends HealthAwareRecorder {
      * @since 1.66
      */
     @SuppressWarnings("PMD")
+    @Deprecated
     public HealthAwarePublisher(final String healthy, final String unHealthy,
             final String thresholdLimit, final String defaultEncoding,
             final boolean useDeltaValues, final String unstableTotalAll,
@@ -127,6 +130,10 @@ public abstract class HealthAwarePublisher extends HealthAwareRecorder {
                 canResolveRelativePaths, pluginName);
     }
 
+    public HealthAwarePublisher(final String pluginName) {
+        super(pluginName);
+    }
+
     /**
      * Callback method that is invoked after the build where this recorder can collect the results. This default
      * implementation provides a template method that updates the build status based on the results and copies all files
@@ -136,34 +143,25 @@ public abstract class HealthAwarePublisher extends HealthAwareRecorder {
      *            current build
      * @param launcher
      *            the launcher for this build
-     * @param logger
-     *            the logger
-     * @return <code>true</code> if the build can continue, <code>false</code> otherwise
-     * @throws IOException
+     * @param listener
+     *@param logger
+     *            the logger  @throws IOException
      *             in case of problems during file copying
      * @throws InterruptedException
      *             if the user canceled the build
      */
     @Override
-    protected boolean perform(final AbstractBuild<?, ?> build, final Launcher launcher, final PluginLogger logger)
+    protected void perform(final Run<?, ?> build, FilePath workspace, final Launcher launcher, final TaskListener listener, final PluginLogger logger)
             throws IOException, InterruptedException {
-        BuildResult result;
-        try {
-            result = perform(build, logger);
-            AbstractBuild<?, ?> referenceBuild = result.getHistory().getReferenceBuild();
+        BuildResult result = perform(build, workspace, listener, logger);
+        Run<?, ?> referenceBuild = result.getHistory().getReferenceBuild();
 
-            if (GlobalSettings.instance().getFailOnCorrupt() && result.hasError()) {
-                return false;
-            }
-
-            if (referenceBuild != null) {
-                logger.log("Computing warning deltas based on reference build " + referenceBuild.getDisplayName());
-            }
+        if (GlobalSettings.instance().getFailOnCorrupt() && result.hasError()) {
+            throw new IOException("Unable to generate report");
         }
-        catch (InterruptedException exception) {
-            logger.log(exception.getMessage());
 
-            return false;
+        if (referenceBuild != null) {
+            logger.log("Computing warning deltas based on reference build " + referenceBuild.getDisplayName());
         }
 
         if (isThresholdEnabled()) {
@@ -171,8 +169,6 @@ public abstract class HealthAwarePublisher extends HealthAwareRecorder {
         }
 
         copyFilesWithAnnotationsToBuildFolder(build.getRootDir(), launcher.getChannel(), result.getAnnotations());
-
-        return true;
     }
 
     /**
@@ -190,12 +186,12 @@ public abstract class HealthAwarePublisher extends HealthAwareRecorder {
 
     /**
      * Performs the publishing of the results of this plug-in.
-     *
-     * @param build
+     *  @param build
      *            the build
+     * @param workspace
+     * @param listener
      * @param logger
-     *            the logger to report the progress to
-     * @return the java project containing the found annotations
+     *            the logger to report the progress to  @return the java project containing the found annotations
      * @throws InterruptedException
      *             If the build is interrupted by the user (in an attempt to
      *             abort the build.) Normally the {@link BuildStep}
@@ -210,7 +206,7 @@ public abstract class HealthAwarePublisher extends HealthAwareRecorder {
      *             a better error message, if it can do so, so that users have
      *             better understanding on why it failed.
      */
-    protected abstract BuildResult perform(AbstractBuild<?, ?> build, PluginLogger logger)
+    protected abstract BuildResult perform(Run<?, ?> build, final FilePath workspace, final TaskListener listener, PluginLogger logger)
             throws InterruptedException, IOException;
 
     // CHECKSTYLE:OFF

@@ -30,9 +30,9 @@ import jenkins.model.Jenkins;
 import hudson.XmlFile;
 import hudson.model.AbstractBuild;
 import hudson.model.Api;
-import hudson.model.Hudson;
 import hudson.model.ModelObject;
 import hudson.model.Result;
+import hudson.model.Run;
 import hudson.plugins.analysis.Messages;
 import hudson.plugins.analysis.util.HtmlPrinter;
 import hudson.plugins.analysis.util.PluginLogger;
@@ -79,7 +79,7 @@ public abstract class BuildResult implements ModelObject, Serializable, Annotati
     }
 
     /** Current build as owner of this action. */
-    private AbstractBuild<?, ?> owner;
+    private Run<?, ?> owner;
     /** All parsed modules. */
     private Set<String> modules;
     /** The total number of parsed modules (regardless if there are annotations). */
@@ -218,15 +218,33 @@ public abstract class BuildResult implements ModelObject, Serializable, Annotati
         initialize(history, build, defaultEncoding, result);
     }
 
+    protected BuildResult(final Run<?, ?> run, final BuildHistory history, final ParserResult totals, final String defaultEncoding) {
+        initialize(history, run, defaultEncoding, totals);
+    }
+
     /**
      * Creates a new history based on the specified build.
      *
      * @param build
      *            the build to start with
      * @return the history
+     * @deprecated use @link{BuildResult#createHistory(Run)}
+     *
      */
+    @Deprecated
     protected BuildHistory createHistory(final AbstractBuild<?, ?> build) {
-        return new BuildHistory(build, getResultActionType(), false);
+        return createHistory((Run) build);
+    }
+
+    /**
+     * Creates a new history based on the specified build.
+     *
+     * @param run
+     *            the build to start with
+     * @return the history
+     */
+    protected BuildHistory createHistory(final Run<?, ?> run) {
+        return new BuildHistory(run, getResultActionType(), false, false);
     }
 
     /**
@@ -251,17 +269,17 @@ public abstract class BuildResult implements ModelObject, Serializable, Annotati
     /**
      * Initializes this new instance of {@link BuildResult}.
      *
-     * @param build
-     *            the current build as owner of this action
-     * @param defaultEncoding
-     *            the default encoding to be used when reading and parsing files
-     * @param result
-     *            the parsed result with all annotations
      * @param history
      *            the history of build results of the associated plug-in
+     * @param build
+ *            the current build as owner of this action
+     * @param defaultEncoding
+*            the default encoding to be used when reading and parsing files
+     * @param result
+*            the parsed result with all annotations
      */
     @SuppressWarnings("hiding")
-    private void initialize(final BuildHistory history, final AbstractBuild<?, ?> build, final String defaultEncoding, // NOCHECKSTYLE
+    private void initialize(final BuildHistory history, final Run<?, ?> build, final String defaultEncoding, // NOCHECKSTYLE
             final ParserResult result) {
         this.history = history;
         owner = build;
@@ -342,8 +360,8 @@ public abstract class BuildResult implements ModelObject, Serializable, Annotati
      * @return the reference build.
      */
     @Exported
-    public AbstractBuild<?, ?> getReferenceBuild() {
-        return owner.getProject().getBuildByNumber(referenceBuild);
+    public Run<?, ?> getReferenceBuild() {
+        return owner.getParent().getBuildByNumber(referenceBuild);
     }
 
     private int computeDelta(final ParserResult result, final AnnotationContainer referenceResult, final Priority priority) {
@@ -353,13 +371,11 @@ public abstract class BuildResult implements ModelObject, Serializable, Annotati
     /**
      * Computes the zero warnings high score based on the current build and the
      * previous build (with results of the associated plug-in).
-     *
-     * @param build
+     *  @param build
      *            the current build
      * @param currentResult
-     *            the current result
      */
-    private void computeZeroWarningsHighScore(final AbstractBuild<?, ?> build, final ParserResult currentResult) {
+    private void computeZeroWarningsHighScore(final Run<?, ?> build, final ParserResult currentResult) {
         if (history.hasPreviousResult()) {
             BuildResult previous = history.getPreviousResult();
             if (currentResult.hasNoAnnotations()) {
@@ -559,7 +575,7 @@ public abstract class BuildResult implements ModelObject, Serializable, Annotati
      * @return <code>true</code> if this result belongs to the last build
      */
     public boolean isCurrent() {
-        return getOwner().getProject().getLastBuild().number == getOwner().number;
+        return getOwner().getParent().getLastBuild().number == getOwner().number;
     }
 
     /**
@@ -567,7 +583,7 @@ public abstract class BuildResult implements ModelObject, Serializable, Annotati
      *
      * @return the owner
      */
-    public AbstractBuild<?, ?> getOwner() {
+    public Run<?, ?> getOwner() {
         return owner;
     }
 
@@ -1467,13 +1483,13 @@ public abstract class BuildResult implements ModelObject, Serializable, Annotati
     private String getReferenceBuildUrl() {
         HtmlPrinter printer = new HtmlPrinter();
         if (hasReferenceBuild()) {
-            AbstractBuild<?, ?> build = getReferenceBuild();
+            Run<?, ?> build = getReferenceBuild();
 
             printer.append("&nbsp;");
             printer.append("(");
             printer.append(Messages.ReferenceBuild());
             printer.append(": ");
-            printer.append(printer.link(Hudson.getInstance().getRootUrl() + "/" + build.getUrl(),
+            printer.append(printer.link(Jenkins.getInstance().getRootUrl() + "/" + build.getUrl(),
                     build.getDisplayName()));
             printer.append(")");
         }

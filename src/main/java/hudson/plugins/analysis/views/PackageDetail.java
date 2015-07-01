@@ -2,6 +2,7 @@ package hudson.plugins.analysis.views;
 
 import hudson.model.AbstractBuild;
 
+import hudson.model.Run;
 import hudson.plugins.analysis.util.model.JavaPackage;
 
 /**
@@ -28,8 +29,29 @@ public class PackageDetail extends AbstractAnnotationsDetail {
      *            the default encoding to be used when reading and parsing files
      * @param header
      *            header to be shown on detail page
+     * @deprecated Use @link{PackageDetail#PackageDetail(Run, DetailFactory, JavaPackage, String, String)}
      */
+    @Deprecated
     public PackageDetail(final AbstractBuild<?, ?> owner, final DetailFactory detailFactory, final JavaPackage javaPackage, final String defaultEncoding, final String header) {
+        super(owner, detailFactory, javaPackage.getAnnotations(), defaultEncoding, header, Hierarchy.PACKAGE);
+        this.javaPackage = javaPackage;
+    }
+
+    /**
+     * Creates a new instance of <code>ModuleDetail</code>.
+     *
+     * @param owner
+     *            current build as owner of this action.
+     * @param detailFactory
+     *            factory to create detail objects with
+     * @param javaPackage
+     *            the package to show the details for
+     * @param defaultEncoding
+     *            the default encoding to be used when reading and parsing files
+     * @param header
+     *            header to be shown on detail page
+     */
+    public PackageDetail(final Run<?, ?> owner, final DetailFactory detailFactory, final JavaPackage javaPackage, final String defaultEncoding, final String header) {
         super(owner, detailFactory, javaPackage.getAnnotations(), defaultEncoding, header, Hierarchy.PACKAGE);
         this.javaPackage = javaPackage;
     }

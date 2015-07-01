@@ -9,6 +9,7 @@ import java.util.Set;
 
 import hudson.model.AbstractBuild;
 import hudson.model.Result;
+import hudson.model.Run;
 import hudson.plugins.analysis.util.model.AnnotationContainer;
 import hudson.plugins.analysis.util.model.DefaultAnnotationContainer;
 import hudson.plugins.analysis.util.model.FileAnnotation;
@@ -21,7 +22,7 @@ import hudson.plugins.analysis.util.model.FileAnnotation;
  */
 public class BuildHistory {
     /** The build to start the history from. */
-    private final AbstractBuild<?, ?> baseline;
+    private final Run<?, ?> baseline;
     /** Type of the action that contains the build results. */
     private final Class<? extends ResultAction<? extends BuildResult>> type;
     /** Determines whether only stable builds should be used as reference builds or not. */
@@ -45,12 +46,12 @@ public class BuildHistory {
      * @param useStableBuildAsReference
      *            determines whether only stable builds should be used as
      *            reference builds or not
-     * @since 1.66
+     * @since 1.73
      */
-    public BuildHistory(final AbstractBuild<?, ?> baseline,
-            final Class<? extends ResultAction<? extends BuildResult>> type,
-            final boolean usePreviousBuildAsReference,
-            final boolean useStableBuildAsReference) {
+    public BuildHistory(final Run<?, ?> baseline,
+                        final Class<? extends ResultAction<? extends BuildResult>> type,
+                        final boolean usePreviousBuildAsReference,
+                        final boolean useStableBuildAsReference) {
         this.baseline = baseline;
         this.type = type;
         this.usePreviousBuildAsReference = usePreviousBuildAsReference;
@@ -130,7 +131,7 @@ public class BuildHistory {
     }
 
     private ResultAction<? extends BuildResult> getAction(final boolean isStatusRelevant, final boolean mustBeStable) {
-        for (AbstractBuild<?, ?> build = baseline.getPreviousBuild(); build != null; build = build.getPreviousBuild()) {
+        for (Run<?, ?> build = baseline.getPreviousBuild(); build != null; build = build.getPreviousBuild()) {
             ResultAction<? extends BuildResult> action = getResultAction(build);
             if (hasValidResult(build, mustBeStable, action) && isSuccessfulAction(action, isStatusRelevant)) {
                 return action;
@@ -152,7 +153,7 @@ public class BuildHistory {
      * @return the result action
      */
     @CheckForNull
-    public ResultAction<? extends BuildResult> getResultAction(final AbstractBuild<?, ?> build) {
+    public ResultAction<? extends BuildResult> getResultAction(final Run<?, ?> build) {
         return build.getAction(type);
     }
 
@@ -176,10 +177,10 @@ public class BuildHistory {
      * @see #hasReferenceBuild()
      */
     @CheckForNull
-    public AbstractBuild<?, ?> getReferenceBuild() {
+    public Run<?, ?> getReferenceBuild() {
         ResultAction<? extends BuildResult> action = getReferenceAction();
         if (action != null) {
-            AbstractBuild<?, ?> build = action.getBuild();
+            Run<?, ?> build = action.getBuild();
             if (hasValidResult(build)) {
                 return build;
             }
@@ -187,11 +188,11 @@ public class BuildHistory {
         return null;
     }
 
-    private boolean hasValidResult(final AbstractBuild<?, ?> build) {
+    private boolean hasValidResult(final Run<?, ?> build) {
         return hasValidResult(build, false, null);
     }
 
-    private boolean hasValidResult(final AbstractBuild<?, ?> build, final boolean mustBeStable, @CheckForNull final ResultAction<? extends BuildResult> action) {
+    private boolean hasValidResult(final Run<?, ?> build, final boolean mustBeStable, @CheckForNull final ResultAction<? extends BuildResult> action) {
         Result result = build.getResult();
 
         if (result == null) {
@@ -314,6 +315,30 @@ public class BuildHistory {
      */
     public AbstractHealthDescriptor getHealthDescriptor() {
         return getBaseline().getHealthDescriptor();
+    }
+
+    /**
+     * Creates a new instance of {@link BuildHistory}.
+     *
+     * @param baseline
+     *            the build to start the history from
+     * @param type
+     *            type of the action that contains the build results
+     * @param usePreviousBuildAsReference
+     *            determines whether the previous build should always be used
+     *            as the reference build
+     * @param useStableBuildAsReference
+     *            determines whether only stable builds should be used as
+     *            reference builds or not
+     * @since 1.66
+     * @deprecated use {@link #BuildHistory(Run, Class, boolean, boolean)}
+     */
+    @Deprecated
+    public BuildHistory(final AbstractBuild<?, ?> baseline,
+            final Class<? extends ResultAction<? extends BuildResult>> type,
+            final boolean usePreviousBuildAsReference,
+            final boolean useStableBuildAsReference) {
+        this((Run) baseline, type, usePreviousBuildAsReference, useStableBuildAsReference);
     }
 
     /**

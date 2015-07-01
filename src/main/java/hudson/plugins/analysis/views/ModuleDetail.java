@@ -2,6 +2,7 @@ package hudson.plugins.analysis.views;
 
 import hudson.model.AbstractBuild;
 
+import hudson.model.Run;
 import hudson.plugins.analysis.Messages;
 import hudson.plugins.analysis.util.model.MavenModule;
 
@@ -29,8 +30,28 @@ public class ModuleDetail extends AbstractAnnotationsDetail {
      *            the default encoding to be used when reading and parsing files
      * @param header
      *            header to be shown on detail page
+     * @deprecated Use @link{ModuleDetail#ModuleDetail(Run, DetailFactory, MavenModule, String, String)}
      */
+    @Deprecated
     public ModuleDetail(final AbstractBuild<?, ?> owner, final DetailFactory detailFactory, final MavenModule module, final String defaultEncoding, final String header) {
+        this((Run) owner, detailFactory, module, defaultEncoding, header);
+    }
+
+    /**
+     * Creates a new instance of <code>ModuleDetail</code>.
+     *
+     * @param owner
+     *            current build as owner of this action.
+     * @param detailFactory
+     *            factory to create detail objects with
+     * @param module
+     *            the module to show the details for
+     * @param defaultEncoding
+     *            the default encoding to be used when reading and parsing files
+     * @param header
+     *            header to be shown on detail page
+     */
+    public ModuleDetail(final Run<?, ?> owner, final DetailFactory detailFactory, final MavenModule module, final String defaultEncoding, final String header) {
         super(owner, detailFactory, module.getAnnotations(), defaultEncoding, header, Hierarchy.MODULE);
         this.module = module;
     }

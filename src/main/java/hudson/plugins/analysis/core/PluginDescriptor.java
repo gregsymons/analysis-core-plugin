@@ -202,17 +202,14 @@ public abstract class PluginDescriptor extends BuildStepDescriptor<Publisher> {
     /**
      * Performs on-the-fly validation on the file name pattern.
      *
-     * @param project
-     *            the project
      * @param pattern
      *            the file pattern
      * @return the validation result
      * @throws IOException
      *             if the encoding is not valid
      */
-    public FormValidation doCheckPattern(@AncestorInPath final AbstractProject<?, ?> project,
-            @QueryParameter final String pattern) throws IOException {
-        return FilePath.validateFileMask(project.getSomeWorkspace(), pattern);
+    public FormValidation doCheckPattern(@QueryParameter final String pattern) throws IOException {
+        return FilePath.validateFileMask(null, pattern);
     }
 
     /**

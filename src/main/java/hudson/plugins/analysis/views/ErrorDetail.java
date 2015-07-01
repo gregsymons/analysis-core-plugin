@@ -5,6 +5,7 @@ import java.util.Collection;
 import hudson.model.AbstractBuild;
 import hudson.model.ModelObject;
 
+import hudson.model.Run;
 import hudson.plugins.analysis.Messages;
 
 /**
@@ -14,19 +15,17 @@ import hudson.plugins.analysis.Messages;
  */
 public class ErrorDetail implements ModelObject  {
     /** Current build as owner of this action. */
-    private final AbstractBuild<?, ?> owner;
+    private final Run<?, ?> owner;
     /** All errors of the project. */
     private final Collection<String> errors;
 
     /**
      * Creates a new instance of <code>ErrorDetail</code>.
-     *
-     * @param owner
+     *  @param owner
      *            current build as owner of this action.
      * @param errors
-     *            all modules of the project
      */
-    public ErrorDetail(final AbstractBuild<?, ?> owner, final Collection<String> errors) {
+    public ErrorDetail(final Run<?, ?> owner, final Collection<String> errors) {
         this.owner = owner;
         this.errors = errors;
     }
@@ -36,7 +35,7 @@ public class ErrorDetail implements ModelObject  {
      *
      * @return the owner
      */
-    public final AbstractBuild<?, ?> getOwner() {
+    public final Run<?, ?> getOwner() {
         return owner;
     }
 

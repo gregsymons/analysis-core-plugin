@@ -1,6 +1,7 @@
 package hudson.plugins.analysis.graph;
 
 import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -17,6 +18,7 @@ import com.google.common.collect.Lists;
 import net.sf.json.JSONObject;
 
 import hudson.model.AbstractProject;
+import hudson.model.Job;
 import hudson.model.ModelObject;
 import hudson.plugins.analysis.core.AbstractHealthDescriptor;
 import hudson.plugins.analysis.core.BuildHistory;
@@ -29,7 +31,7 @@ public abstract class GraphConfigurationView implements ModelObject {
     private static final Logger LOGGER = Logger.getLogger(GraphConfigurationView.class.getName());
 
     /** The owning project to configure the graphs for. */
-    private final AbstractProject<?, ?> project;
+    private final Job<?, ?> project;
 
     private final String key;
     private final BuildHistory buildHistory;
@@ -47,8 +49,26 @@ public abstract class GraphConfigurationView implements ModelObject {
      *            unique key of this graph
      * @param buildHistory
      *            the build history for this project
+     * @deprecated Use @link{GraphConfigurationView(GraphConfiguration, Job, String, BuildHistory)}
      */
+    @Deprecated
     public GraphConfigurationView(final GraphConfiguration configuration, final AbstractProject<?, ?> project, final String key, final BuildHistory buildHistory) {
+        this(configuration, (Job) project, key, buildHistory);
+    }
+
+    /**
+     * Creates a new instance of {@link GraphConfigurationView}.
+     *
+     * @param configuration
+     *            the graph configuration
+     * @param project
+     *            the owning project to configure the graphs for
+     * @param key
+     *            unique key of this graph
+     * @param buildHistory
+     *            the build history for this project
+     */
+    public GraphConfigurationView(final GraphConfiguration configuration, final Job<?, ?> project, final String key, final BuildHistory buildHistory) {
         this.configuration = configuration;
         this.project = project;
         this.key = key;
@@ -65,7 +85,7 @@ public abstract class GraphConfigurationView implements ModelObject {
      *            the name of the plug-in
      * @return the created file
      */
-    protected static File createDefaultsFile(final AbstractProject<?, ?> project, final String pluginName) {
+    protected static File createDefaultsFile(final Job<?, ?> project, final String pluginName) {
         return new File(project.getRootDir(), pluginName + ".txt");
     }
 
@@ -89,8 +109,7 @@ public abstract class GraphConfigurationView implements ModelObject {
      *
      * @return the project
      */
-    public AbstractProject<?, ?> getOwner() {
-        return project;
+    public Job<?, ?> getOwner() { return project;
     }
 
     /**

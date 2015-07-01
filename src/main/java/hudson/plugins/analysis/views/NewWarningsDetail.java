@@ -4,6 +4,7 @@ import java.util.Collection;
 
 import hudson.model.AbstractBuild;
 
+import hudson.model.Run;
 import hudson.plugins.analysis.Messages;
 import hudson.plugins.analysis.util.model.FileAnnotation;
 
@@ -18,19 +19,17 @@ public class NewWarningsDetail extends AbstractAnnotationsDetail {
 
     /**
      * Creates a new instance of <code>NewWarningsDetail</code>.
-     *
-     * @param owner
+     *  @param owner
      *            the current build as owner of this action
      * @param detailFactory
      *            factory to create detail objects with
      * @param newWarnings
-     *            all new warnings in this build
+ *            all new warnings in this build
      * @param defaultEncoding
-     *            the default encoding to be used when reading and parsing files
+*            the default encoding to be used when reading and parsing files
      * @param header
-     *            header to be shown on detail page
      */
-    public NewWarningsDetail(final AbstractBuild<?, ?> owner, final DetailFactory detailFactory, final Collection<FileAnnotation> newWarnings, final String defaultEncoding, final String header) {
+    public NewWarningsDetail(final Run<?, ?> owner, final DetailFactory detailFactory, final Collection<FileAnnotation> newWarnings, final String defaultEncoding, final String header) {
         super(owner, detailFactory, newWarnings, defaultEncoding, header, Hierarchy.PROJECT);
     }
 

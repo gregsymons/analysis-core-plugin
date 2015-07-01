@@ -4,6 +4,7 @@ import hudson.model.AbstractBuild;
 import hudson.model.Action;
 import hudson.model.Result;
 
+import hudson.model.Run;
 import hudson.plugins.analysis.util.ToolTipProvider;
 
 /**
@@ -34,7 +35,7 @@ public interface ResultAction<T extends BuildResult> extends Action {
      *
      * @return the associated build of this action
      */
-    AbstractBuild<?, ?> getBuild();
+    Run<?, ?> getBuild();
 
     /**
      * Returns the associated tool tip provider.

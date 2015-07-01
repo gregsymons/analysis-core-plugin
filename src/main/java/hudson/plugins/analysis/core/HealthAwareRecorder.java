@@ -7,14 +7,18 @@ import java.io.IOException;
 import java.util.Collection;
 
 import org.apache.commons.lang.StringUtils;
+import org.kohsuke.stapler.DataBoundSetter;
+
+import jenkins.tasks.SimpleBuildStep;
 
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.matrix.MatrixAggregatable;
 import hudson.model.AbstractBuild;
-import hudson.model.BuildListener;
 import hudson.model.Project;
 import hudson.model.Result;
+import hudson.model.Run;
+import hudson.model.TaskListener;
 import hudson.plugins.analysis.util.EncodingValidator;
 import hudson.plugins.analysis.util.Files;
 import hudson.plugins.analysis.util.LoggerFactory;
@@ -43,40 +47,40 @@ import hudson.tasks.Recorder;
  */
 // CHECKSTYLE:COUPLING-OFF
 @SuppressWarnings("PMD.TooManyFields")
-public abstract class HealthAwareRecorder extends Recorder implements HealthDescriptor, MatrixAggregatable {
+public abstract class HealthAwareRecorder extends Recorder implements HealthDescriptor, MatrixAggregatable, SimpleBuildStep {
     private static final long serialVersionUID = 8892994325541840827L;
 
     /** Default threshold priority limit. */
     private static final String DEFAULT_PRIORITY_THRESHOLD_LIMIT = "low";
     /** Report health as 100% when the number of warnings is less than this value. */
-    private final String healthy;
+    private String healthy = "10";
     /** Report health as 0% when the number of warnings is greater than this value. */
-    private final String unHealthy;
+    private String unHealthy = "20";
     /** Determines which warning priorities should be considered when evaluating the build health. */
-    private String thresholdLimit;
+    private String thresholdLimit = Priority.HIGH.getLocalizedString();
 
     /** The name of the plug-in. */
     private final String pluginName;
     /** The default encoding to be used when reading and parsing files. */
-    private final String defaultEncoding;
+    private String defaultEncoding = StringUtils.EMPTY;
     /**
      * Determines whether the plug-in should run for failed builds, too.
      *
      * @since 1.6
      */
-    private final boolean canRunOnFailed;
+    private boolean canRunOnFailed = true;
     /** Determines whether the previous build should always be used as the
      * reference build.
      * @since 1.66
      */
-    private final boolean usePreviousBuildAsReference;
+    private boolean usePreviousBuildAsReference = false;
     /**
      * Determines whether only stable builds should be used as reference builds
      * or not.
      *
      * @since 1.48
      */
-    private final boolean useStableBuildAsReference;
+    private boolean useStableBuildAsReference = true;
     /**
      * Determines whether the absolute annotations delta or the actual
      * annotations set difference should be used to evaluate the build
@@ -84,7 +88,7 @@ public abstract class HealthAwareRecorder extends Recorder implements HealthDesc
      *
      * @since 1.4
      */
-    private final boolean useDeltaValues;
+    private boolean useDeltaValues = false;
     /**
      * Thresholds for build status unstable and failed, resp. and priorities
      * all, high, normal, and low, resp.
@@ -98,14 +102,14 @@ public abstract class HealthAwareRecorder extends Recorder implements HealthDesc
      *
      * @since 1.19
      */
-    private final boolean shouldDetectModules;
+    private boolean shouldDetectModules = true;
     /**
      * Determines whether new warnings should be computed (with respect to
      * baseline).
      *
      * @since 1.34
      */
-    private final boolean dontComputeNew;
+    private boolean dontComputeNew = false;
     /**
      * Determines whether relative paths in warnings should be resolved using a
      * time expensive operation that scans the whole workspace for matching
@@ -113,7 +117,7 @@ public abstract class HealthAwareRecorder extends Recorder implements HealthDesc
      *
      * @since 1.43
      */
-    private final boolean doNotResolveRelativePaths;
+    private boolean doNotResolveRelativePaths = false;
 
     /**
      * Creates a new instance of {@link HealthAwareRecorder}.
@@ -188,6 +192,7 @@ public abstract class HealthAwareRecorder extends Recorder implements HealthDesc
      */
     // CHECKSTYLE:OFF
     @SuppressWarnings("PMD")
+    @Deprecated
     public HealthAwareRecorder(final String healthy, final String unHealthy,
             final String thresholdLimit, final String defaultEncoding,
             final boolean useDeltaValues, final String unstableTotalAll,
@@ -235,7 +240,145 @@ public abstract class HealthAwareRecorder extends Recorder implements HealthDesc
         this.pluginName = "[" + pluginName + "] ";
     }
 
+    @DataBoundSetter
+    public void setHealthy(final String healthy) {
+        this.healthy = healthy;
+    }
+
+    @DataBoundSetter
+    public void setUnHealthy(final String unHealthy) {
+        this.unHealthy = unHealthy;
+    }
+
+    @DataBoundSetter
+    public void setDefaultEncoding(final String defaultEncoding) {
+        this.defaultEncoding = defaultEncoding;
+    }
+
+    @DataBoundSetter
+    public void setThresholdLimit(final String thresholdLimit) {
+        this.thresholdLimit = thresholdLimit;
+    }
+
+    @DataBoundSetter
+    public void setCanRunOnFailed(final boolean canRunOnFailed) {
+        this.canRunOnFailed = canRunOnFailed;
+    }
+
+    @DataBoundSetter
+    public void setUsePreviousBuildAsReference(final boolean usePreviousBuildAsReference) {
+        this.usePreviousBuildAsReference = usePreviousBuildAsReference;
+    }
+
+    @DataBoundSetter
+    public void setUseStableBuildAsReference(final boolean useStableBuildAsReference) {
+        this.useStableBuildAsReference = useStableBuildAsReference;
+    }
+
+    @DataBoundSetter
+    public void setUseDeltaValues(final boolean useDeltaValues) {
+        this.useDeltaValues = useDeltaValues;
+    }
+
+    @DataBoundSetter
+    public void setShouldDetectModules(final boolean shouldDetectModules) {
+        this.shouldDetectModules = shouldDetectModules;
+    }
+
+    @DataBoundSetter
+    public void setCanComputeNew(final boolean canComputeNew) {
+        this.dontComputeNew = !canComputeNew;
+    }
+
+    @DataBoundSetter
+    public void setCanResolveRelativePaths(final boolean canResolveRelativePaths) {
+        this.doNotResolveRelativePaths = !canResolveRelativePaths;
+    }
+
+    @DataBoundSetter
+    public void setUnstableTotalAll(final String unstableTotalAll) {
+        thresholds.unstableTotalAll = unstableTotalAll;
+    }
+
+    @DataBoundSetter
+    public void setUnstableTotalHigh(final String unstableTotalHigh) {
+        thresholds.unstableTotalHigh = unstableTotalHigh;
+    }
+
+    @DataBoundSetter
+    public void setUnstableTotalNormal(final String unstableTotalNormal) {
+        thresholds.unstableTotalNormal = unstableTotalNormal;
+    }
+
+    @DataBoundSetter
+    public void setUnstableTotalLow(final String unstableTotalLow) {
+        thresholds.unstableTotalLow = unstableTotalLow;
+    }
+
+    @DataBoundSetter
+    public void setUnstableNewAll(final String unstableNewAll) {
+        thresholds.unstableNewAll = unstableNewAll;
+    }
+
+    @DataBoundSetter
+    public void setUnstableNewHigh(final String unstableNewHigh) {
+        thresholds.unstableNewHigh = unstableNewHigh;
+    }
+
+    @DataBoundSetter
+    public void setUnstableNewNormal(final String unstableNewNormal) {
+        thresholds.unstableNewNormal = unstableNewNormal;
+    }
+
+    @DataBoundSetter
+    public void setUnstableNewLow(final String unstableNewLow) {
+        thresholds.unstableNewLow = unstableNewLow;
+    }
+
+    @DataBoundSetter
+    public void setFailedTotalAll(final String failedTotalAll) {
+        thresholds.failedTotalAll = failedTotalAll;
+    }
+
+    @DataBoundSetter
+    public void setFailedTotalHigh(final String failedTotalHigh) {
+        thresholds.failedTotalHigh = failedTotalHigh;
+    }
+
+    @DataBoundSetter
+    public void setFailedTotalNormal(final String failedTotalNormal) {
+        thresholds.failedTotalNormal = failedTotalNormal;
+    }
+
+    @DataBoundSetter
+    public void setFailedTotalLow(final String failedTotalLow) {
+        thresholds.failedTotalLow = failedTotalLow;
+    }
+
+    @DataBoundSetter
+    public void setFailedNewAll(final String failedNewAll) {
+        thresholds.failedNewAll = failedNewAll;
+    }
+
+    @DataBoundSetter
+    public void setFailedNewHigh(final String failedNewHigh) {
+        thresholds.failedNewHigh = failedNewHigh;
+    }
+
+    @DataBoundSetter
+    public void setFailedNewNormal(final String failedNewNormal) {
+        thresholds.failedNewNormal = failedNewNormal;
+    }
+
+    @DataBoundSetter
+    public void setFailedNewLow(final String failedNewLow) {
+        thresholds.failedNewLow = failedNewLow;
+    }
     // CHECKSTYLE:ON
+
+    public HealthAwareRecorder(final String pluginName) {
+        this.pluginName = pluginName;
+    }
 
     /**
      * Returns whether relative paths in warnings should be resolved using a
@@ -342,37 +485,17 @@ public abstract class HealthAwareRecorder extends Recorder implements HealthDesc
     }
 
     @Override
-    public final boolean perform(final AbstractBuild<?, ?> build, final Launcher launcher,
-            final BuildListener listener) throws InterruptedException, IOException {
+    public final void perform(final Run<?, ?> run, final FilePath workspace, final Launcher launcher, final TaskListener listener) throws InterruptedException, IOException {
         PluginLogger logger = new LoggerFactory().createLogger(listener.getLogger(), pluginName);
-        if (canContinue(build.getResult())) {
-            return perform(build, launcher, logger);
+        if (canContinue(run.getResult())) {
+            perform(run, workspace, launcher, listener, logger);
         }
         else {
-            logger.log("Skipping publisher since build result is " + build.getResult());
-            return true;
+            logger.log("Skipping publisher since build result is " + run.getResult());
         }
     }
 
-    /**
-     * Callback method that is invoked after the build where this recorder can
-     * collect the results.
-     *
-     * @param build
-     *            current build
-     * @param launcher
-     *            the launcher for this build
-     * @param logger
-     *            the logger
-     * @return <code>true</code> if the build can continue, <code>false</code>
-     *         otherwise
-     * @throws IOException
-     *             in case of problems during file copying
-     * @throws InterruptedException
-     *             if the user canceled the build
-     */
-    protected abstract boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
-            PluginLogger logger) throws InterruptedException, IOException;
+    protected abstract void perform(final Run<?, ?> run, final FilePath workspace, final Launcher launcher, final TaskListener listener, final PluginLogger logger) throws InterruptedException, IOException;
 
     @Override
     public PluginDescriptor getDescriptor() {
@@ -528,9 +651,9 @@ public abstract class HealthAwareRecorder extends Recorder implements HealthDesc
      * @return <code>true</code> if the current build uses maven,
      *         <code>false</code> otherwise
      */
-    protected boolean isMavenBuild(final AbstractBuild<?, ?> build) {
-        if (build.getProject() instanceof Project) {
-            Project<?, ?> project = (Project<?, ?>)build.getProject();
+    protected boolean isMavenBuild(final Run<?, ?> build) {
+        if (build.getParent() instanceof Project) {
+            Project<?, ?> project = (Project<?, ?>)build.getParent();
             for (Builder builder : project.getBuilders()) {
                 if (builder instanceof Maven) {
                     return true;

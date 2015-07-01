@@ -16,6 +16,7 @@ import hudson.maven.MavenModule;
 import hudson.model.AbstractBuild;
 import hudson.model.HealthReport;
 import hudson.model.HealthReportingAction;
+import hudson.model.Run;
 import hudson.plugins.analysis.Messages;
 import hudson.plugins.analysis.util.ToolTipProvider;
 
@@ -35,7 +36,7 @@ import hudson.plugins.analysis.util.ToolTipProvider;
 @ExportedBean
 public abstract class AbstractResultAction<T extends BuildResult> implements StaplerProxy, HealthReportingAction, ToolTipProvider, ResultAction<T> {
     /** The associated build of this action. */
-    private final AbstractBuild<?, ?> owner;
+    private final Run<?, ?> owner;
     /** Parameters for the health report. */
     private final AbstractHealthDescriptor healthDescriptor;
     /** The actual result of this action. */
@@ -43,15 +44,13 @@ public abstract class AbstractResultAction<T extends BuildResult> implements Sta
 
     /**
      * Creates a new instance of <code>AbstractResultAction</code>.
-     *
-     * @param owner
+     *  @param owner
      *            the associated build of this action
      * @param healthDescriptor
      *            health descriptor
      * @param result
-     *            the result of the action
      */
-    public AbstractResultAction(final AbstractBuild<?, ?> owner, final AbstractHealthDescriptor healthDescriptor, final T result) {
+    public AbstractResultAction(final Run<?, ?> owner, final AbstractHealthDescriptor healthDescriptor, final T result) {
         this.owner = owner;
         this.result = result;
         this.healthDescriptor = healthDescriptor;
@@ -104,12 +103,12 @@ public abstract class AbstractResultAction<T extends BuildResult> implements Sta
      *
      * @return the associated build of this action
      */
-    public final AbstractBuild<?, ?> getOwner() {
+    public final Run<?, ?> getOwner() {
         return owner;
     }
 
     @Override
-    public final AbstractBuild<?, ?> getBuild() {
+    public final Run<?, ?> getBuild() {
         return owner;
     }
 
@@ -277,7 +276,7 @@ public abstract class AbstractResultAction<T extends BuildResult> implements Sta
      * @param healthDescriptor
      *            health descriptor
      * @deprecated use
-     *             {@link #AbstractResultAction(AbstractBuild, AbstractHealthDescriptor, BuildResult)}
+     *             {@link #AbstractResultAction(Run, AbstractHealthDescriptor, WarningsResult)}
      *             so that every action will have a result that is not null
      */
     @Deprecated

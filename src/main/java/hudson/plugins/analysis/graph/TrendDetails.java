@@ -4,6 +4,7 @@ import org.kohsuke.stapler.StaplerRequest;
 
 import hudson.model.AbstractProject;
 
+import hudson.model.Job;
 import hudson.util.Graph;
 
 /**
@@ -15,7 +16,7 @@ public class TrendDetails {
     /** The graph to display. */
     private final Graph trendGraph;
     /** The project of the graph. */
-    private final AbstractProject<?, ?> project;
+    private final Job<?, ?> project;
 
     /**
      * Creates a new instance of {@link TrendDetails}.
@@ -24,8 +25,14 @@ public class TrendDetails {
      *            the project of the graph
      * @param trendGraph
      *            the graph
+     * @deprecated Use @link{TrendDetails#TrendDetails(Job, Graph)}
      */
+    @Deprecated
     public TrendDetails(final AbstractProject<?, ?> project, final Graph trendGraph) {
+        this((Job) project, trendGraph);
+    }
+
+    public TrendDetails(final Job<?, ?> project, final Graph trendGraph) {
         this.project = project;
         this.trendGraph = trendGraph;
     }
@@ -46,7 +53,7 @@ public class TrendDetails {
      *
      * @return the abstractProject
      */
-    public AbstractProject<?, ?> getProject() {
+    public Job<?, ?> getProject() {
         return project;
     }
 }
